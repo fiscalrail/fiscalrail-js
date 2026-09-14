@@ -1,0 +1,69 @@
+{
+  "name": "@fiscalrail/sdk",
+  "version": "0.4.0",
+  "description": "Official Node.js SDK for the FiscalRail invoicing API",
+  "keywords": [
+    "fiscalrail",
+    "invoicing",
+    "spain",
+    "verifactu",
+    "api"
+  ],
+  "license": "MIT",
+  "author": "FiscalRail",
+  "homepage": "https://docs.fiscalrail.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fiscalrail/fiscalrail-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fiscalrail/fiscalrail-js/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./webhooks": {
+      "types": "./dist/webhooks.d.ts",
+      "import": "./dist/webhooks.js"
+    },
+    "./tax-regimes/es": {
+      "types": "./dist/tax-regimes/es.d.ts",
+      "import": "./dist/tax-regimes/es.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "packageManager": "npm@11.12.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "generate": "node scripts/generate-contract.mjs",
+    "check:generated": "node scripts/generate-contract.mjs --check",
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "test:types": "tsc -p test/typing/tsconfig.json",
+    "check": "npm run check:generated && npm run test && npm run test:types && npm run pack:check",
+    "pack:check": "npm pack --dry-run --cache .npm-cache",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.4",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.2",
+    "yaml": "^2.8.1"
+  }
+}
