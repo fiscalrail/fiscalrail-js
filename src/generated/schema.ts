@@ -1,5 +1,5 @@
 export interface paths {
-    "/accounts": {
+    "/account": {
         parameters: {
             query?: never;
             header?: never;
@@ -7,31 +7,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List accounts
-         * @description Returns the accounts accessible to the API key. Account keys currently return exactly one account.
-         */
-        get: operations["listAccounts"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The opaque ID of the account. */
-                id: components["schemas"]["AccountId"];
-            };
-            cookie?: never;
-        };
-        /**
-         * Retrieve an account
-         * @description Returns an account accessible to the API key and its current invoicing configuration.
+         * Retrieve the authenticated account
+         * @description Returns the account selected by the API key.
          */
         get: operations["retrieveAccount"];
         put?: never;
@@ -40,20 +17,41 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Update an account
-         * @description Updates the current supplier address or invoice numbering, or atomically replaces account invoicing defaults. Address changes apply only to invoices issued after the update.
+         * Update the authenticated account
+         * @description Updates business identity, contact information, or address. Issued invoices retain their immutable supplier snapshot.
          */
         patch: operations["updateAccount"];
         trace?: never;
     };
-    "/accounts/{account_id}/balance": {
+    "/account/invoicing": {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description Opaque ID of the account whose balance is requested. */
-                account_id: components["schemas"]["AccountId"];
-            };
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retrieve invoicing settings
+         * @description Returns the selected account's invoicing configuration.
+         */
+        get: operations["retrieveAccountInvoicing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update invoicing settings
+         * @description Omitted fields remain unchanged. Default series and payment instructions are replaced atomically when supplied. Settings affect PDFs rendered after the update, including older invoices without a cached PDF.
+         */
+        patch: operations["updateAccountInvoicing"];
+        trace?: never;
+    };
+    "/account/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         /**
@@ -69,19 +67,16 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/accounts/{account_id}/tax-regime": {
+    "/account/tax-regime": {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description Opaque ID of the account whose tax-regime state is requested. */
-                account_id: components["schemas"]["AccountId"];
-            };
+            path?: never;
             cookie?: never;
         };
         /**
-         * Retrieve an account tax regime
-         * @description Returns the selected regime and its current account-specific configuration and compliance state.
+         * Retrieve the account tax regime
+         * @description Returns the selected account's regime configuration and compliance state.
          */
         get: operations["retrieveAccountTaxRegime"];
         put?: never;
@@ -415,7 +410,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tax_ids/{id}": {
+    "/tax-ids/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -681,17 +676,6 @@ export interface components {
             /** @description IANA timezone used to determine the account's local date. */
             timezone: string;
             /**
-             * InvoiceLocale
-             * @description Default language used when rendering invoices.
-             * @enum {string}
-             */
-            invoice_locale: "en" | "es";
-            invoice_numbering_scope: components["schemas"]["AccountInvoiceNumberingScope"];
-            /** @description Series used by each invoice operation when no explicit series is supplied. */
-            default_series: components["schemas"]["AccountDefaultSeries"];
-            /** @description Ordered payment instructions used when invoice issuance omits `payment_terms.options`. The first instruction is preferred. */
-            default_payment_instructions: components["schemas"]["PaymentInstructionId"][];
-            /**
              * Format: date-time
              * @description When the account was created.
              */
@@ -703,12 +687,50 @@ export interface components {
             updated_at: string;
         };
         AccountUpdate: {
-            /** @description Supplier address fields to update; omitted fields remain unchanged. Required address fields cannot be cleared. Changes apply only to invoices issued after the update. */
+            /** @description Legal or trading name. */
+            name?: string;
+            /** @description Contact email; null clears it. */
+            email?: string | null;
+            /** @description Contact phone number; null clears it. */
+            phone?: string | null;
+            /** @description Supplier address fields to update; omitted fields remain unchanged. */
             address?: components["schemas"]["AddressUpdate"];
-            invoice_numbering_scope?: components["schemas"]["AccountInvoiceNumberingScope"];
-            /** @description Complete replacement for the account's three default series assignments. */
+        };
+        AccountInvoicing: {
+            /**
+             * @description String identifying invoicing settings.
+             * @constant
+             */
+            object: "account_invoicing";
+            /**
+             * InvoiceLocale
+             * @description Default PDF language.
+             * @enum {string}
+             */
+            locale: "en" | "es";
+            /** @description PDF footer; null removes it. */
+            footer: string | null;
+            /** @description Invoice numbering scope for every series. */
+            numbering_scope: components["schemas"]["AccountInvoiceNumberingScope"];
+            /** @description Complete default series assignments. */
+            default_series: components["schemas"]["AccountDefaultSeries"];
+            /** @description Ordered payment instruction defaults. */
+            default_payment_instructions: components["schemas"]["PaymentInstructionId"][];
+        };
+        AccountInvoicingUpdate: {
+            /**
+             * InvoiceLocale
+             * @description Default PDF language.
+             * @enum {string}
+             */
+            locale?: "en" | "es";
+            /** @description PDF footer; null removes it. */
+            footer?: string | null;
+            /** @description Invoice numbering scope for every series. */
+            numbering_scope?: components["schemas"]["AccountInvoiceNumberingScope"];
+            /** @description Complete default series assignments. */
             default_series?: components["schemas"]["AccountDefaultSeries"];
-            /** @description Complete ordered replacement for the account's default payment instructions. Every instruction must belong to the account. */
+            /** @description Ordered payment instruction defaults. */
             default_payment_instructions?: components["schemas"]["PaymentInstructionId"][];
         };
         /** AccountDefaultSeries */
@@ -727,17 +749,6 @@ export interface components {
          * @enum {string}
          */
         AccountInvoiceNumberingScope: "account" | "customer";
-        AccountList: {
-            /**
-             * @description String identifying this as a list object.
-             * @constant
-             */
-            object: "list";
-            /** @description Whether another page exists. Currently always false for account keys. */
-            has_more: boolean;
-            /** @description Accounts accessible to the API key. */
-            data: components["schemas"]["Account"][];
-        };
         ApiKey: {
             id: components["schemas"]["ApiKeyId"];
             /**
@@ -2233,7 +2244,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    listAccounts: {
+    retrieveAccount: {
         parameters: {
             query?: never;
             header?: never;
@@ -2242,35 +2253,9 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A list of Account objects. */
-            200: {
-                headers: {
-                    "Request-Id": components["headers"]["RequestId"];
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountList"];
-                };
-            };
-            401: components["responses"]["AuthenticationRequired"];
-        };
-    };
-    retrieveAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The opaque ID of the account. */
-                id: components["schemas"]["AccountId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
             /** @description An Account object. */
             200: {
                 headers: {
-                    "Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2278,17 +2263,13 @@ export interface operations {
                 };
             };
             401: components["responses"]["AuthenticationRequired"];
-            404: components["responses"]["ResourceNotFound"];
         };
     };
     updateAccount: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description The opaque ID of the account. */
-                id: components["schemas"]["AccountId"];
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
@@ -2307,6 +2288,53 @@ export interface operations {
                 };
             };
             401: components["responses"]["AuthenticationRequired"];
+            422: components["responses"]["InvalidAccount"];
+        };
+    };
+    retrieveAccountInvoicing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Account invoicing settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountInvoicing"];
+                };
+            };
+            401: components["responses"]["AuthenticationRequired"];
+        };
+    };
+    updateAccountInvoicing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountInvoicingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Updated account invoicing settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountInvoicing"];
+                };
+            };
+            401: components["responses"]["AuthenticationRequired"];
             404: components["responses"]["ResourceNotFound"];
             422: components["responses"]["InvalidAccount"];
         };
@@ -2315,10 +2343,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description Opaque ID of the account whose balance is requested. */
-                account_id: components["schemas"]["AccountId"];
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -2326,7 +2351,6 @@ export interface operations {
             /** @description A Balance object. */
             200: {
                 headers: {
-                    "Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2341,10 +2365,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description Opaque ID of the account whose tax-regime state is requested. */
-                account_id: components["schemas"]["AccountId"];
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -2352,7 +2373,6 @@ export interface operations {
             /** @description An Account Tax Regime object. */
             200: {
                 headers: {
-                    "Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -2360,7 +2380,6 @@ export interface operations {
                 };
             };
             401: components["responses"]["AuthenticationRequired"];
-            404: components["responses"]["ResourceNotFound"];
         };
     };
     listApiKeys: {

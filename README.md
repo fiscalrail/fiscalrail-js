@@ -68,9 +68,10 @@ and HTTP-date `Retry-After` values are honored up to 30 seconds. Set
 
 | Resource | Methods |
 | --- | --- |
-| `accounts` | `list`, `retrieve`, `update` |
-| `balances` | `retrieve(accountId)` |
-| `accountTaxRegimes` | `retrieve(accountId)` |
+| `accounts` | `retrieve`, `update` |
+| `accountInvoicing` | `retrieve`, `update` |
+| `balances` | `retrieve()` |
+| `accountTaxRegimes` | `retrieve()` |
 | `apiKeys` | `list`, `create`, `retrieve`, `delete`, `iterate` |
 | `customers` | `list`, `create`, `retrieve`, `update`, `delete`, `iterate` |
 | `eventDestinations` | `list`, `create`, `retrieve`, `update`, `delete`, `enable`, `disable`, `iterate` |

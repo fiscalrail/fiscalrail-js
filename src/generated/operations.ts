@@ -8,37 +8,44 @@ export interface Operation {
 }
 
 export const OPERATIONS = {
-  "listAccounts": {
-    method: "GET",
-    path: "/accounts",
-    successStatuses: [
-      200
-    ]
-  },
   "retrieveAccount": {
     method: "GET",
-    path: "/accounts/{id}",
+    path: "/account",
     successStatuses: [
       200
     ]
   },
   "updateAccount": {
     method: "PATCH",
-    path: "/accounts/{id}",
+    path: "/account",
+    successStatuses: [
+      200
+    ]
+  },
+  "retrieveAccountInvoicing": {
+    method: "GET",
+    path: "/account/invoicing",
+    successStatuses: [
+      200
+    ]
+  },
+  "updateAccountInvoicing": {
+    method: "PATCH",
+    path: "/account/invoicing",
     successStatuses: [
       200
     ]
   },
   "retrieveBalance": {
     method: "GET",
-    path: "/accounts/{account_id}/balance",
+    path: "/account/balance",
     successStatuses: [
       200
     ]
   },
   "retrieveAccountTaxRegime": {
     method: "GET",
-    path: "/accounts/{account_id}/tax-regime",
+    path: "/account/tax-regime",
     successStatuses: [
       200
     ]
@@ -220,7 +227,7 @@ export const OPERATIONS = {
   },
   "retrieveTaxId": {
     method: "GET",
-    path: "/tax_ids/{id}",
+    path: "/tax-ids/{id}",
     successStatuses: [
       200
     ]

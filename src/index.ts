@@ -31,6 +31,8 @@ export {
 export type { BinaryContent, Fetch } from "./transport.js";
 export type {
   Account,
+  AccountInvoicing,
+  AccountInvoicingUpdateParams,
   AccountTaxRegime,
   AccountUpdateParams,
   ApiKey,
