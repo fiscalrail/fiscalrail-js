@@ -22,7 +22,7 @@ test("sends authenticated requests and exposes response metadata", async () => {
   assert.equal(JSON.stringify(customer).includes("req_123"), false);
   assert.equal(request.input.href, "https://api.fiscalrail.com/v1/customers");
   assert.equal(request.init.headers.Authorization, "Bearer ak_test");
-  assert.equal(request.init.headers["User-Agent"], "fiscalrail-js/0.4.0");
+  assert.equal(request.init.headers["User-Agent"], "fiscalrail-js/0.5.0");
   assert.equal(request.init.redirect, "error");
 });
 
@@ -75,7 +75,7 @@ test("successful non-JSON responses become parse errors without retries", async 
     requests += 1;
     return new Response("<html>", { status: 200, headers: { "Request-Id": "req_bad" } });
   } });
-  await assert.rejects(client.accounts.list(), (error) => {
+  await assert.rejects(client.accounts.retrieve(), (error) => {
     assert.ok(error instanceof ResponseParseError);
     assert.equal(error.requestId, "req_bad");
     return true;

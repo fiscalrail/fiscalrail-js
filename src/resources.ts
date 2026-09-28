@@ -2,6 +2,8 @@ import type { WithResponseMetadata } from "./response.js";
 import type { BinaryContent, QueryValue, Transport } from "./transport.js";
 import type {
   Account,
+  AccountInvoicing,
+  AccountInvoicingUpdateParams,
   AccountTaxRegime,
   AccountUpdateParams,
   ApiKey,
@@ -52,28 +54,34 @@ abstract class PaginatedResource extends Resource {
 }
 
 export class AccountsResource extends Resource {
-  list(): Result<Page<Account>> {
-    return this.transport.requestJson("listAccounts", { retrySafe: true });
+  retrieve(): Result<Account> {
+    return this.transport.requestJson("retrieveAccount", { retrySafe: true });
   }
 
-  retrieve(accountId: string): Result<Account> {
-    return this.transport.requestJson("retrieveAccount", { path: { id: accountId }, retrySafe: true });
+  update(params: AccountUpdateParams): Result<Account> {
+    return this.transport.requestJson("updateAccount", { body: params });
+  }
+}
+
+export class AccountInvoicingResource extends Resource {
+  retrieve(): Result<AccountInvoicing> {
+    return this.transport.requestJson("retrieveAccountInvoicing", { retrySafe: true });
   }
 
-  update(accountId: string, params: AccountUpdateParams): Result<Account> {
-    return this.transport.requestJson("updateAccount", { path: { id: accountId }, body: params });
+  update(params: AccountInvoicingUpdateParams): Result<AccountInvoicing> {
+    return this.transport.requestJson("updateAccountInvoicing", { body: params });
   }
 }
 
 export class BalancesResource extends Resource {
-  retrieve(accountId: string): Result<Balance> {
-    return this.transport.requestJson("retrieveBalance", { path: { account_id: accountId }, retrySafe: true });
+  retrieve(): Result<Balance> {
+    return this.transport.requestJson("retrieveBalance", { retrySafe: true });
   }
 }
 
 export class AccountTaxRegimesResource extends Resource {
-  retrieve(accountId: string): Result<AccountTaxRegime> {
-    return this.transport.requestJson("retrieveAccountTaxRegime", { path: { account_id: accountId }, retrySafe: true });
+  retrieve(): Result<AccountTaxRegime> {
+    return this.transport.requestJson("retrieveAccountTaxRegime", { retrySafe: true });
   }
 }
 

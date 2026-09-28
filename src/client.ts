@@ -1,5 +1,6 @@
 import {
   AccountsResource,
+  AccountInvoicingResource,
   AccountTaxRegimesResource,
   ApiKeysResource,
   BalancesResource,
@@ -26,6 +27,7 @@ export interface FiscalRailOptions {
 
 export class FiscalRail {
   readonly accounts: AccountsResource;
+  readonly accountInvoicing: AccountInvoicingResource;
   readonly balances: BalancesResource;
   readonly accountTaxRegimes: AccountTaxRegimesResource;
   readonly apiKeys: ApiKeysResource;
@@ -59,6 +61,7 @@ export class FiscalRail {
     const idempotencyKeyFactory = options.idempotencyKeyFactory ?? (() => globalThis.crypto.randomUUID());
 
     this.accounts = new AccountsResource(transport);
+    this.accountInvoicing = new AccountInvoicingResource(transport);
     this.balances = new BalancesResource(transport);
     this.accountTaxRegimes = new AccountTaxRegimesResource(transport);
     this.apiKeys = new ApiKeysResource(transport);

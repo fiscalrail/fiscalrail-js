@@ -1,6 +1,8 @@
 import type { components } from "./generated/schema.js";
 
 export type Account = components["schemas"]["Account"];
+export type AccountInvoicing = components["schemas"]["AccountInvoicing"];
+export type AccountInvoicingUpdateParams = components["schemas"]["AccountInvoicingUpdate"];
 export type AccountUpdateParams = components["schemas"]["AccountUpdate"];
 export type AccountTaxRegime = components["schemas"]["AccountTaxRegime"];
 export type ApiKey = components["schemas"]["ApiKey"];

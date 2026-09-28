@@ -9,7 +9,30 @@ test("handwritten resources cover every generated OpenAPI operation", async () =
   const source = await readFile(new URL("../src/resources.ts", import.meta.url), "utf8");
   const wrapped = new Set([...source.matchAll(/request(?:Json|Empty|Bytes)\("([A-Za-z0-9]+)"/g)].map((match) => match[1]));
   assert.deepEqual([...wrapped].sort(), Object.keys(OPERATIONS).sort());
-  assert.equal(wrapped.size, 42);
+  assert.equal(wrapped.size, 43);
+});
+
+test("current account resources use the deployed routes", async () => {
+  const calls = [];
+  const client = new FiscalRail({ apiKey: "ak_test", fetch: async (input, init) => {
+    calls.push({ path: input.pathname, method: init.method, body: init.body });
+    return Response.json({ object: "account_invoicing" });
+  } });
+  await client.accounts.retrieve();
+  await client.accounts.update({ name: "Updated" });
+  await client.accountInvoicing.retrieve();
+  await client.accountInvoicing.update({ numbering_scope: "customer" });
+  await client.balances.retrieve();
+  await client.accountTaxRegimes.retrieve();
+  assert.deepEqual(calls.map(({ path, method }) => [method, path]), [
+    ["GET", "/v1/account"],
+    ["PATCH", "/v1/account"],
+    ["GET", "/v1/account/invoicing"],
+    ["PATCH", "/v1/account/invoicing"],
+    ["GET", "/v1/account/balance"],
+    ["GET", "/v1/account/tax-regime"],
+  ]);
+  assert.deepEqual(JSON.parse(calls[3].body), { numbering_scope: "customer" });
 });
 
 test("automatic pagination preserves filters and advances the cursor", async () => {
@@ -79,5 +102,5 @@ test("uses the exact tax ID route", async () => {
     return Response.json({ id: "tax_id_123", object: "tax_id" });
   } });
   await client.taxIds.retrieve("tax_id_123");
-  assert.equal(path, "/v1/tax_ids/tax_id_123");
+  assert.equal(path, "/v1/tax-ids/tax_id_123");
 });

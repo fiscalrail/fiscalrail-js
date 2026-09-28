@@ -9,9 +9,12 @@ const params: InvoiceIssueParams = {
 
 const customer: Promise<Customer> = client.customers.retrieve("cus_123");
 void customer;
-void client.accounts.list();
-void client.balances.retrieve("acct_123");
-void client.accountTaxRegimes.retrieve("acct_123");
+void client.accounts.retrieve();
+void client.accounts.update({ name: "Example supplier" });
+void client.accountInvoicing.retrieve();
+void client.accountInvoicing.update({ numbering_scope: "customer" });
+void client.balances.retrieve();
+void client.accountTaxRegimes.retrieve();
 void client.apiKeys.list();
 void client.eventDestinations.enable("evt_dest_123");
 void client.events.list({ types: ["invoice.created"] });
