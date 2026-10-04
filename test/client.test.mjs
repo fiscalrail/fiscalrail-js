@@ -22,7 +22,7 @@ test("sends authenticated requests and exposes response metadata", async () => {
   assert.equal(JSON.stringify(customer).includes("req_123"), false);
   assert.equal(request.input.href, "https://api.fiscalrail.com/v1/customers");
   assert.equal(request.init.headers.Authorization, "Bearer ak_test");
-  assert.equal(request.init.headers["User-Agent"], "fiscalrail-js/0.5.0");
+  assert.equal(request.init.headers["User-Agent"], "fiscalrail-js/0.6.0");
   assert.equal(request.init.redirect, "error");
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "@fiscalrail/sdk",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Official Node.js SDK for the FiscalRail invoicing API",
   "keywords": [
     "fiscalrail",

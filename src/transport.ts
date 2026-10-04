@@ -18,6 +18,7 @@ export interface TransportOptions {
 export interface RequestOptions {
   path?: Record<string, string>;
   body?: unknown;
+  form?: FormData;
   query?: Record<string, QueryValue>;
   headers?: Record<string, string>;
   retrySafe?: boolean;
@@ -122,7 +123,7 @@ export class Transport {
             ...(options.idempotencyKey === undefined ? {} : { "Idempotency-Key": options.idempotencyKey }),
             ...options.headers,
           },
-          ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
+          ...(options.form === undefined ? (options.body === undefined ? {} : { body: JSON.stringify(options.body) }) : { body: options.form }),
         });
 
         if ((operation.successStatuses as readonly number[]).includes(response.status)) return await consume(response);

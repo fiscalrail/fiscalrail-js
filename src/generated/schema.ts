@@ -87,6 +87,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/account/tax-regime/es/certificate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload an issuer certificate
+         * @description Uploads a PKCS#12 certificate and queues AEAT verification. Only Live Spanish accounts are supported. A working setup remains active until verification succeeds. A new upload replaces any pending change.
+         */
+        post: operations["uploadAccountCertificate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/tax-regime/es/representation/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify AEAT representation
+         * @description Queues verification of FiscalRail representation for a Live Spanish account. If direct submission is active, it remains active until the represented replacement verifies. Any pending change is replaced.
+         */
+        post: operations["verifyAccountRepresentation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/tax-regime/es/submission/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry submission verification
+         * @description Queues another check of the pending configuration, or the active configuration if there is no pending change. Only Live Spanish accounts are supported.
+         */
+        post: operations["verifyAccountSubmission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/tax-regime/es/submission/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Cancel a pending submission change
+         * @description Deletes the pending change and its stored certificate, preserving the active setup. Succeeds even when there is no pending change. Only Live Spanish accounts are supported.
+         */
+        delete: operations["cancelAccountSubmissionChange"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api-keys": {
         parameters: {
             query?: never;
@@ -859,8 +939,66 @@ export interface components {
             es: components["schemas"]["SpanishAccountTaxRegimeDetails"];
         };
         SpanishAccountTaxRegimeDetails: {
-            /** @description Current AEAT representation state, or null for a Test account. */
+            /** @description Replacement being verified. Null when absent, after activation or cancellation, and for Test accounts. Failed checks retain the replacement for retry. */
+            pending_submission: components["schemas"]["SpanishPendingSubmission"] | null;
+            /** @description Active AEAT submission method and readiness, or null for a Test account. */
+            submission: components["schemas"]["SpanishAccountSubmission"] | null;
+            /** @description Current AEAT representation state, or null for a Test account or direct submission. */
             representation: components["schemas"]["SpanishAccountRepresentation"] | null;
+        };
+        SpanishAccountSubmission: {
+            /**
+             * SpanishAccountSubmissionKind
+             * @description Submit using the issuer's uploaded certificate or FiscalRail's authorized representative certificate.
+             * @enum {string}
+             */
+            kind: "direct" | "represented";
+            /** @description Whether the active configuration permits live invoice issuance and submission. */
+            ready: boolean;
+            /**
+             * SpanishSubmissionVerificationStatus
+             * @description Latest submission verification status. A ready active configuration stays verified during a recheck; use ready to decide whether issuance is permitted.
+             * @enum {string}
+             */
+            status: "not_started" | "pending_verification" | "verified" | "invalid" | "unavailable";
+            /** @description Machine-readable reason for the latest failed check, such as unauthorized, unavailable, expired, nif_mismatch, not_yet_valid or duplicate_nif. Null before a check or after success. */
+            error_code: string | null;
+            /**
+             * Format: date-time
+             * @description When the latest verification attempt finished.
+             */
+            last_checked_at: string | null;
+            /**
+             * Format: date-time
+             * @description Expiry of the issuer's certificate for direct submission; null for represented submission.
+             */
+            certificate_expires_at: string | null;
+        };
+        SpanishPendingSubmission: {
+            /**
+             * SpanishPendingSubmissionKind
+             * @description Submission method requested by the pending replacement.
+             * @enum {string}
+             */
+            kind: "direct" | "represented";
+            /**
+             * SpanishPendingSubmissionStatus
+             * @description Latest submission verification status. A ready active configuration stays verified during a recheck; use ready to decide whether issuance is permitted.
+             * @enum {string}
+             */
+            status: "not_started" | "pending_verification" | "verified" | "invalid" | "unavailable";
+            /** @description Machine-readable reason for the latest failed check, such as unauthorized, unavailable, expired, nif_mismatch, not_yet_valid or duplicate_nif. Null before a check or after success. */
+            error_code: string | null;
+            /**
+             * Format: date-time
+             * @description When the latest verification attempt finished.
+             */
+            last_checked_at: string | null;
+            /**
+             * Format: date-time
+             * @description Expiry of the pending direct certificate, or null for represented submission.
+             */
+            certificate_expires_at: string | null;
         };
         SpanishAccountRepresentation: {
             /**
@@ -1907,6 +2045,20 @@ export interface components {
                 message: string;
             };
         };
+        SubmissionConfigurationErrorResponse: {
+            /** SubmissionConfigurationError */
+            error: {
+                /** @description Error identifier, such as invalid_certificate or invalid_submission_configuration. */
+                code: string;
+                /** @description Human-readable error summary. */
+                message: string;
+                /** @description Validation details when a parsed certificate or configuration is invalid. */
+                details?: {
+                    field: string;
+                    message: string;
+                }[];
+            };
+        };
         InvalidResourceErrorResponse: {
             /** InvalidResourceError */
             error: {
@@ -2380,6 +2532,134 @@ export interface operations {
                 };
             };
             401: components["responses"]["AuthenticationRequired"];
+        };
+    };
+    uploadAccountCertificate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description A .p12 or .pfx file, at most 128 KiB. Must include the private key and identify the account issuer NIF.
+                     */
+                    certificate_file: string;
+                    /** @description PKCS#12 password. Omit for an unprotected bundle. Discarded after parsing. */
+                    certificate_password?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Current account configuration. Poll GET /account/tax-regime to observe verification results. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountTaxRegime"];
+                };
+            };
+            400: components["responses"]["InvalidRequest"];
+            401: components["responses"]["AuthenticationRequired"];
+            404: components["responses"]["ResourceNotFound"];
+            /** @description Invalid certificate or configuration. Invalid uploads do not change the active or pending configuration. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionConfigurationErrorResponse"];
+                };
+            };
+        };
+    };
+    verifyAccountRepresentation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current account configuration. Poll GET /account/tax-regime to observe verification results. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountTaxRegime"];
+                };
+            };
+            401: components["responses"]["AuthenticationRequired"];
+            404: components["responses"]["ResourceNotFound"];
+            /** @description Invalid certificate or configuration. Invalid uploads do not change the active or pending configuration. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionConfigurationErrorResponse"];
+                };
+            };
+        };
+    };
+    verifyAccountSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current account configuration. Poll GET /account/tax-regime to observe verification results. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountTaxRegime"];
+                };
+            };
+            401: components["responses"]["AuthenticationRequired"];
+            404: components["responses"]["ResourceNotFound"];
+            /** @description Invalid certificate or configuration. Invalid uploads do not change the active or pending configuration. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionConfigurationErrorResponse"];
+                };
+            };
+        };
+    };
+    cancelAccountSubmissionChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current account configuration. Poll GET /account/tax-regime to observe verification results. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountTaxRegime"];
+                };
+            };
+            401: components["responses"]["AuthenticationRequired"];
+            404: components["responses"]["ResourceNotFound"];
         };
     };
     listApiKeys: {

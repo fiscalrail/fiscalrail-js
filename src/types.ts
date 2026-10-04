@@ -65,3 +65,11 @@ export interface RequestOptions {
 export interface PdfRenderOptions {
   locale?: "en" | "es";
 }
+
+export type SpanishAccountTaxRegime = components["schemas"]["SpanishAccountTaxRegime"];
+export type SpanishAccountSubmission = components["schemas"]["SpanishAccountSubmission"];
+export type SpanishPendingSubmission = components["schemas"]["SpanishPendingSubmission"];
+export interface CertificateUploadParams {
+  certificate_file: Blob;
+  certificate_password?: string;
+}

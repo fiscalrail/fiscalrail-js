@@ -9,7 +9,7 @@ test("handwritten resources cover every generated OpenAPI operation", async () =
   const source = await readFile(new URL("../src/resources.ts", import.meta.url), "utf8");
   const wrapped = new Set([...source.matchAll(/request(?:Json|Empty|Bytes)\("([A-Za-z0-9]+)"/g)].map((match) => match[1]));
   assert.deepEqual([...wrapped].sort(), Object.keys(OPERATIONS).sort());
-  assert.equal(wrapped.size, 43);
+  assert.equal(wrapped.size, 47);
 });
 
 test("current account resources use the deployed routes", async () => {
@@ -103,4 +103,49 @@ test("uses the exact tax ID route", async () => {
   } });
   await client.taxIds.retrieve("tax_id_123");
   assert.equal(path, "/v1/tax-ids/tax_id_123");
+});
+
+
+test("ES upload sends native multipart binary and preserves password", async () => {
+  const bytes = new Uint8Array([0, 255, 13, 10, 42]);
+  const client = new FiscalRail({ apiKey: "test", fetch: async (input, init) => {
+    assert.equal(input.pathname, "/v1/account/tax-regime/es/certificate");
+    assert.equal(init.method, "POST");
+    assert.equal(init.headers["Content-Type"], undefined);
+    const request = new Request(input, init);
+    const form = await request.formData();
+    assert.deepEqual(new Uint8Array(await form.get("certificate_file").arrayBuffer()), bytes);
+    assert.equal(form.get("certificate_password"), "@secret;é");
+    return Response.json({ key: "es", es: { pending_submission: { status: "pending_verification" } } }, { status: 202 });
+  } });
+  const result = await client.accountTaxRegimes.es.uploadCertificate({ certificate_file: new Blob([bytes]), certificate_password: "@secret;é" });
+  assert.equal(result.es.pending_submission.status, "pending_verification");
+});
+
+test("ES verification and cancellation use deployed routes", async () => {
+  const calls = [];
+  const client = new FiscalRail({ apiKey: "test", fetch: async (input, init) => {
+    calls.push([init.method, input.pathname]);
+    assert.equal(init.body, undefined);
+    return Response.json({ key: "es" }, { status: init.method === "DELETE" ? 200 : 202 });
+  } });
+  await client.accountTaxRegimes.es.verifyRepresentation();
+  await client.accountTaxRegimes.es.verifySubmission();
+  await client.accountTaxRegimes.es.cancelSubmissionChange();
+  assert.deepEqual(calls, [
+    ["POST", "/v1/account/tax-regime/es/representation/verify"],
+    ["POST", "/v1/account/tax-regime/es/submission/verify"],
+    ["DELETE", "/v1/account/tax-regime/es/submission/pending"],
+  ]);
+});
+
+test("certificate uploads omit absent passwords and never retry", async () => {
+  let calls = 0;
+  const client = new FiscalRail({ apiKey: "test", maxRetries: 2, fetch: async (input, init) => {
+    calls += 1;
+    assert.equal(init.body.has("certificate_password"), false);
+    return Response.json({ error: { code: "unavailable", message: "Unavailable" } }, { status: 503 });
+  } });
+  await assert.rejects(client.accountTaxRegimes.es.uploadCertificate({ certificate_file: new Blob(["cert"]) }));
+  assert.equal(calls, 1);
 });
