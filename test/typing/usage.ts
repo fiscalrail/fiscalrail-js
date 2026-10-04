@@ -30,3 +30,8 @@ void constructEvent("{}", "t=1,v1=deadbeef", "whsec_test");
 void client.invoicePdfs.render("inv_123", { locale: "fr" });
 // @ts-expect-error invoice lines are required
 void client.invoices.issue({});
+
+void client.accountTaxRegimes.es.uploadCertificate({ certificate_file: new Blob(["cert"]), certificate_password: "password" });
+void client.accountTaxRegimes.es.verifyRepresentation();
+void client.accountTaxRegimes.es.verifySubmission();
+void client.accountTaxRegimes.es.cancelSubmissionChange();

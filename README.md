@@ -181,3 +181,32 @@ FISCALRAIL_OPENAPI=../../whack/config/fiscal_rail/api.oas.yml npm run check:gene
 The generator owns `src/generated`. Resource methods, transport behavior,
 errors, pagination, PDFs, webhook verification, and tax conveniences remain
 handwritten. See [RELEASING.md](RELEASING.md) for the publication checklist.
+
+
+## Spanish AEAT submission
+
+Use a Live Spanish account key. Upload a `.p12`/`.pfx` file (up to 128 KiB),
+including its private key, using native multipart upload. Omit the password for
+an unprotected bundle. The certificate's issuer NIF must match the account.
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+const setup = await client.accountTaxRegimes.es.uploadCertificate({
+  certificate_file: new Blob([await readFile("issuer.p12")]),
+  certificate_password: process.env.CERTIFICATE_PASSWORD ?? "",
+});
+const current = await client.accountTaxRegimes.retrieve();
+// For key === "es", inspect current.es.pending_submission and current.es.submission.ready.
+await client.accountTaxRegimes.es.verifySubmission(); // retry the pending or active check
+await client.accountTaxRegimes.es.cancelSubmissionChange();
+await client.accountTaxRegimes.es.verifyRepresentation(); // after granting AEAT authority
+```
+
+Each mutation above is a separate operation; choose the one needed. Upload and
+verification return the account setup while AEAT checks run asynchronously.
+Poll the generic account tax-regime resource for pending verification status,
+error code and the active setup's readiness. A working setup remains active until
+a replacement verifies; failed checks retain the pending certificate for retry.
+Cancelling removes only the pending change. Uploads are not automatically retried.
+The ES mutations use `/account/tax-regime/es/...`; reads use `/account/tax-regime`.

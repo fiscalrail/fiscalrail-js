@@ -50,6 +50,34 @@ export const OPERATIONS = {
       200
     ]
   },
+  "uploadAccountCertificate": {
+    method: "POST",
+    path: "/account/tax-regime/es/certificate",
+    successStatuses: [
+      202
+    ]
+  },
+  "verifyAccountRepresentation": {
+    method: "POST",
+    path: "/account/tax-regime/es/representation/verify",
+    successStatuses: [
+      202
+    ]
+  },
+  "verifyAccountSubmission": {
+    method: "POST",
+    path: "/account/tax-regime/es/submission/verify",
+    successStatuses: [
+      202
+    ]
+  },
+  "cancelAccountSubmissionChange": {
+    method: "DELETE",
+    path: "/account/tax-regime/es/submission/pending",
+    successStatuses: [
+      200
+    ]
+  },
   "listApiKeys": {
     method: "GET",
     path: "/api-keys",

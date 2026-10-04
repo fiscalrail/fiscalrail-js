@@ -5,6 +5,8 @@ import type {
   AccountInvoicing,
   AccountInvoicingUpdateParams,
   AccountTaxRegime,
+  CertificateUploadParams,
+  SpanishAccountTaxRegime,
   AccountUpdateParams,
   ApiKey,
   ApiKeyCreateParams,
@@ -80,8 +82,37 @@ export class BalancesResource extends Resource {
 }
 
 export class AccountTaxRegimesResource extends Resource {
+  readonly es: SpanishSubmissionResource;
+
+  constructor(transport: Transport) {
+    super(transport);
+    this.es = new SpanishSubmissionResource(transport);
+  }
+
   retrieve(): Result<AccountTaxRegime> {
     return this.transport.requestJson("retrieveAccountTaxRegime", { retrySafe: true });
+  }
+}
+
+export class SpanishSubmissionResource extends Resource {
+  uploadCertificate(params: CertificateUploadParams): Result<SpanishAccountTaxRegime> {
+    if (params.certificate_file.size > 128 * 1024) throw new RangeError("certificate_file must be at most 128 KiB");
+    const form = new FormData();
+    form.append("certificate_file", params.certificate_file, "certificate.p12");
+    if (params.certificate_password !== undefined) form.append("certificate_password", params.certificate_password);
+    return this.transport.requestJson("uploadAccountCertificate", { form });
+  }
+
+  verifyRepresentation(): Result<SpanishAccountTaxRegime> {
+    return this.transport.requestJson("verifyAccountRepresentation");
+  }
+
+  verifySubmission(): Result<SpanishAccountTaxRegime> {
+    return this.transport.requestJson("verifyAccountSubmission");
+  }
+
+  cancelSubmissionChange(): Result<SpanishAccountTaxRegime> {
+    return this.transport.requestJson("cancelAccountSubmissionChange");
   }
 }
 
